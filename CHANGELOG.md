@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub Actions CI (`.github/workflows/ci.yml`) running `mix precommit` against Postgres 18 on every push and on PRs into `master`/`staging`, plus unused-lock, formatting and clean-tree checks.
 - `.tool-versions` pinning Erlang 29.0 and Elixir 1.19.5 for asdf and CI.
 - README covering setup, `.env` configuration, creating the admin account, how each admin area maps to the public page, the precommit gate and the branch flow.
+- `docs/admin-content-outline.md`: every profile field, section copy and list item to enter in `/admin` so the site matches the original design, in display order.
 
 ### Changed
 - Core components (`button`, `input`, `flash`, `header`, `table`, `list`) restyled with the portfolio tokens: 2px ink borders, square corners, mono labels; `button` gains a `danger` variant.
