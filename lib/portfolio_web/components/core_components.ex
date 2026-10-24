@@ -63,16 +63,24 @@ defmodule PortfolioWeb.CoreComponents do
       id={@id}
       phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
       role="alert"
-      class="toast toast-top toast-end z-50"
+      class="fixed top-4 right-4 z-50"
       {@rest}
     >
       <div class={[
-        "alert w-80 sm:w-96 max-w-80 sm:max-w-96 text-wrap",
-        @kind == :info && "alert-info",
-        @kind == :error && "alert-error"
+        "flex w-80 max-w-[calc(100vw-2rem)] items-start gap-3 border-2 bg-surface p-4 text-ink text-wrap shadow-[5px_5px_0_var(--gn-ink)] sm:w-96",
+        @kind == :info && "border-ink",
+        @kind == :error && "border-accent-text"
       ]}>
-        <.icon :if={@kind == :info} name="hero-information-circle" class="size-5 shrink-0" />
-        <.icon :if={@kind == :error} name="hero-exclamation-circle" class="size-5 shrink-0" />
+        <.icon
+          :if={@kind == :info}
+          name="hero-information-circle"
+          class="size-5 shrink-0 text-violet"
+        />
+        <.icon
+          :if={@kind == :error}
+          name="hero-exclamation-circle"
+          class="size-5 shrink-0 text-accent-text"
+        />
         <div>
           <p :if={@title} class="font-semibold">{@title}</p>
           <p>{msg}</p>
@@ -95,17 +103,26 @@ defmodule PortfolioWeb.CoreComponents do
       <.button phx-click="go" variant="primary">Send!</.button>
       <.button navigate={~p"/"}>Home</.button>
   """
-  attr :rest, :global, include: ~w(href navigate patch method download name value disabled)
+  attr :rest, :global,
+    include: ~w(href navigate patch method download name value disabled type target rel)
+
   attr :class, :any
-  attr :variant, :string, values: ~w(primary)
+  attr :variant, :string, values: ~w(primary danger)
   slot :inner_block, required: true
 
   def button(%{rest: rest} = assigns) do
-    variants = %{"primary" => "btn-primary", nil => "btn-primary btn-soft"}
+    variants = %{
+      "primary" => "bg-accent text-on-accent",
+      "danger" => "bg-surface text-accent-text",
+      nil => "bg-surface text-ink"
+    }
 
     assigns =
       assign_new(assigns, :class, fn ->
-        ["btn", Map.fetch!(variants, assigns[:variant])]
+        [
+          "btn-brut inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 border-2 border-ink px-5 font-semibold disabled:cursor-not-allowed disabled:opacity-50 phx-submit-loading:opacity-75",
+          Map.fetch!(variants, assigns[:variant])
+        ]
       end)
 
     if rest[:href] || rest[:navigate] || rest[:patch] do
@@ -212,8 +229,8 @@ defmodule PortfolioWeb.CoreComponents do
       end)
 
     ~H"""
-    <div class="fieldset mb-2">
-      <label for={@id}>
+    <div class="mb-4">
+      <label for={@id} class="inline-flex min-h-11 cursor-pointer items-center gap-3">
         <input
           type="hidden"
           name={@name}
@@ -221,17 +238,16 @@ defmodule PortfolioWeb.CoreComponents do
           disabled={@rest[:disabled]}
           form={@rest[:form]}
         />
-        <span class="label">
-          <input
-            type="checkbox"
-            id={@id}
-            name={@name}
-            value="true"
-            checked={@checked}
-            class={@class || "checkbox checkbox-sm"}
-            {@rest}
-          />{@label}
-        </span>
+        <input
+          type="checkbox"
+          id={@id}
+          name={@name}
+          value="true"
+          checked={@checked}
+          class={@class || "size-5 cursor-pointer accent-[var(--gn-accent)]"}
+          {@rest}
+        />
+        <span>{@label}</span>
       </label>
       <.error :for={msg <- @errors}>{msg}</.error>
     </div>
@@ -240,13 +256,13 @@ defmodule PortfolioWeb.CoreComponents do
 
   def input(%{type: "select"} = assigns) do
     ~H"""
-    <div class="fieldset mb-2">
+    <div class="mb-4">
       <label for={@id}>
-        <span :if={@label} class="label mb-1">{@label}</span>
+        <span :if={@label} class={label_class()}>{@label}</span>
         <select
           id={@id}
           name={@name}
-          class={[@class || "w-full select", @errors != [] && (@error_class || "select-error")]}
+          class={[@class || field_class(), @errors != [] && (@error_class || field_error_class())]}
           multiple={@multiple}
           {@rest}
         >
@@ -261,15 +277,15 @@ defmodule PortfolioWeb.CoreComponents do
 
   def input(%{type: "textarea"} = assigns) do
     ~H"""
-    <div class="fieldset mb-2">
+    <div class="mb-4">
       <label for={@id}>
-        <span :if={@label} class="label mb-1">{@label}</span>
+        <span :if={@label} class={label_class()}>{@label}</span>
         <textarea
           id={@id}
           name={@name}
           class={[
-            @class || "w-full textarea",
-            @errors != [] && (@error_class || "textarea-error")
+            @class || [field_class(), "min-h-28 leading-relaxed"],
+            @errors != [] && (@error_class || field_error_class())
           ]}
           {@rest}
         >{Phoenix.HTML.Form.normalize_value("textarea", @value)}</textarea>
@@ -282,17 +298,17 @@ defmodule PortfolioWeb.CoreComponents do
   # All other inputs text, datetime-local, url, password, etc. are handled here...
   def input(assigns) do
     ~H"""
-    <div class="fieldset mb-2">
+    <div class="mb-4">
       <label for={@id}>
-        <span :if={@label} class="label mb-1">{@label}</span>
+        <span :if={@label} class={label_class()}>{@label}</span>
         <input
           type={@type}
           name={@name}
           id={@id}
           value={Phoenix.HTML.Form.normalize_value(@type, @value)}
           class={[
-            @class || "w-full input",
-            @errors != [] && (@error_class || "input-error")
+            @class || field_class(),
+            @errors != [] && (@error_class || field_error_class())
           ]}
           {@rest}
         />
@@ -302,10 +318,18 @@ defmodule PortfolioWeb.CoreComponents do
     """
   end
 
+  defp label_class, do: "mb-1.5 block font-mono text-[13px] text-muted"
+
+  defp field_class,
+    do:
+      "block w-full min-h-11 border-2 border-ink bg-surface px-3 py-2 text-ink placeholder:text-muted"
+
+  defp field_error_class, do: "border-accent-text"
+
   # Helper used by inputs to generate form errors
   defp error(assigns) do
     ~H"""
-    <p class="mt-1.5 flex gap-2 items-center text-sm text-error">
+    <p class="mt-1.5 flex gap-2 items-center text-sm text-accent-text">
       <.icon name="hero-exclamation-circle" class="size-5" />
       {render_slot(@inner_block)}
     </p>
@@ -321,12 +345,15 @@ defmodule PortfolioWeb.CoreComponents do
 
   def header(assigns) do
     ~H"""
-    <header class={[@actions != [] && "flex items-center justify-between gap-6", "pb-4"]}>
+    <header class={[
+      @actions != [] && "flex flex-wrap items-end justify-between gap-x-6 gap-y-4",
+      "pb-6"
+    ]}>
       <div>
-        <h1 class="text-lg font-semibold leading-8">
+        <h1 class="m-0 text-[clamp(28px,3.5vw,40px)] leading-tight font-extrabold tracking-[-0.03em]">
           {render_slot(@inner_block)}
         </h1>
-        <p :if={@subtitle != []} class="text-sm text-base-content/70">
+        <p :if={@subtitle != []} class="mt-2 text-muted">
           {render_slot(@subtitle)}
         </p>
       </div>
@@ -367,7 +394,7 @@ defmodule PortfolioWeb.CoreComponents do
       end
 
     ~H"""
-    <table class="table table-zebra">
+    <table class="w-full border-collapse text-left [&_td]:border-b-2 [&_td]:border-ink [&_td]:py-3 [&_td]:pr-4 [&_th]:border-b-2 [&_th]:border-ink [&_th]:py-3 [&_th]:pr-4 [&_th]:font-mono [&_th]:text-[13px] [&_th]:font-normal [&_th]:text-muted">
       <thead>
         <tr>
           <th :for={col <- @col}>{col[:label]}</th>
@@ -414,10 +441,10 @@ defmodule PortfolioWeb.CoreComponents do
 
   def list(assigns) do
     ~H"""
-    <ul class="list">
-      <li :for={item <- @item} class="list-row">
-        <div class="list-col-grow">
-          <div class="font-bold">{item.title}</div>
+    <ul class="m-0 list-none border-t-2 border-ink p-0">
+      <li :for={item <- @item} class="border-b-2 border-ink py-3">
+        <div>
+          <div class="font-mono text-[13px] text-muted">{item.title}</div>
           <div>{render_slot(item)}</div>
         </div>
       </li>

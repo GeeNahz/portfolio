@@ -7,9 +7,50 @@
 # General application configuration
 import Config
 
+# In dev and test, load KEY=value pairs from a local .env file (see
+# .env.example). Variables already set in the shell take precedence.
+# Production reads real environment variables in config/runtime.exs.
+if config_env() in [:dev, :test] and File.exists?(Path.expand("../.env", __DIR__)) do
+  Path.expand("../.env", __DIR__)
+  |> File.read!()
+  |> String.split("\n")
+  |> Enum.map(&String.trim/1)
+  |> Enum.reject(&(&1 == "" or String.starts_with?(&1, "#")))
+  |> Enum.each(fn line ->
+    case String.split(line, "=", parts: 2) do
+      [key, value] ->
+        key = key |> String.trim() |> String.trim_leading("export ")
+        value = value |> String.trim() |> String.trim("\"") |> String.trim("'")
+        if System.get_env(key) == nil, do: System.put_env(key, value)
+
+      _ ->
+        :ok
+    end
+  end)
+end
+
+config :portfolio, :scopes,
+  user: [
+    default: true,
+    module: Portfolio.Accounts.Scope,
+    assign_key: :current_scope,
+    access_path: [:user, :id],
+    schema_key: :user_id,
+    schema_type: :binary_id,
+    schema_table: :users,
+    test_data_fixture: Portfolio.AccountsFixtures,
+    test_setup_helper: :register_and_log_in_user
+  ]
+
 config :portfolio,
   ecto_repos: [Portfolio.Repo],
   generators: [timestamp_type: :utc_datetime, binary_id: true]
+
+# All tables use UUID primary and foreign keys, even if a migration forgets
+# to say so explicitly.
+config :portfolio, Portfolio.Repo,
+  migration_primary_key: [type: :binary_id],
+  migration_foreign_key: [type: :binary_id]
 
 # Configure the endpoint
 config :portfolio, PortfolioWeb.Endpoint,
