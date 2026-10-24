@@ -24,6 +24,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `mix portfolio.create_admin EMAIL PASSWORD` creates a confirmed admin account.
 - Dev/test database settings read `DB_USER`, `DB_PASS`, `DB_HOST`, `DB_PORT`, `DB_NAME` and `DB_TEST_NAME`, defaulting to the previous `postgres`/`postgres` values; a local `.env` is loaded automatically in dev/test.
 - `.env.example` documenting every environment variable the project reads.
+- GitHub Actions CI (`.github/workflows/ci.yml`) running `mix precommit` against Postgres 18 on every push and on PRs into `master`/`staging`, plus unused-lock, formatting and clean-tree checks.
+- `.tool-versions` pinning Erlang 29.0 and Elixir 1.19.5 for asdf and CI.
 
 ### Changed
 - Core components (`button`, `input`, `flash`, `header`, `table`, `list`) restyled with the portfolio tokens: 2px ink borders, square corners, mono labels; `button` gains a `danger` variant.
